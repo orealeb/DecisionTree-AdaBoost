@@ -394,15 +394,23 @@ def main():
     #with open('res.csv', 'w') as fp:
         #a = csv.writer(fp, delimiter=',')
         #a.writerows(tested_set)
-        
+    pre = []
+    for example in test_data.instances:
+        pre.append(learned_tree.predict(example))
+        print learned_tree.predict(example)
+    
+    #read in label
+    labels = []
+    for line in open("labels.csv"):
+        line = line.replace('"', '').strip()
+        labels.append(line)
+
     res_file = open('decision_tree_res.csv', 'w')
     writer = csv.writer(res_file)
     header = 'RefId','IsBadBuy'
     writer.writerow(header)  
-    j = 73015  
     for i in range(len(tested_set)):
-        writer.writerow([j, tested_set[-1]])
-        j+=1
+        writer.writerow([labels[i], tested_set[i][-1]])
     res_file.close()
 
     totalTime = time.time() - now
