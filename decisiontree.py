@@ -410,7 +410,12 @@ def main():
     header = 'RefId','IsBadBuy'
     writer.writerow(header)  
     for i in range(len(tested_set)):
+<<<<<<< HEAD
         writer.writerow([labels[i], tested_set[i][-1]])
+=======
+        writer.writerow([j, tested_set[i][-1]])
+        j+=1
+>>>>>>> a344dff0f730f10dad362c2aa122262731dcd774
     res_file.close()
 
     totalTime = time.time() - now

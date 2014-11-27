@@ -110,8 +110,14 @@ def resample(weights, m):
     return R
 
 
+<<<<<<< HEAD
 
 ret = adaboost(training_data, 50)
+=======
+#############################Run Adaboost############################################### 
+################ Param: training data and number of rounds, default is 100, which takes hours to run, so test with smaller number
+ret = adaboost(training_data, 3)
+>>>>>>> a344dff0f730f10dad362c2aa122262731dcd774
 print "adaboost building complete!"
 
 print ret
