@@ -66,7 +66,8 @@ def adaboost(training_data, rounds):
         if error == 0.0:
             alpha = 4.0
         elif error > 0.5:
-            break    #discard classifier with error > 0.5
+            print    "Discarding learner"
+            continue    #discard classifier with error > 0.5
         else:
             alpha = 0.5 * np.log((1 - error)/error)
 
@@ -111,7 +112,7 @@ def resample(weights, m):
 
 
 
-ret = adaboost(training_data, 50)
+ret = adaboost(training_data, 5)
 print "adaboost building complete!"
 
 print ret
@@ -124,7 +125,7 @@ for row in test_data.instances:
 i = 1
 for weight, learner in ret:
     train_accuracy = decisiontree.tree_accuracy(training_data.instances, learner)
-    print "Training Accuracy for learner " + str(i) + " is " + str(train_accuracy) + "%"
+    print "Training Accuracy for learner " + str(i) + ", weight " + str(weight) + " is " + str(train_accuracy) + "%"
     i+=1
 
 res_file = open('adaboost_res.csv', 'w')
