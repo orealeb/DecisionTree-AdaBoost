@@ -401,7 +401,7 @@ def main():
     writer.writerow(header)  
     j = 73015  
     for i in range(len(tested_set)):
-        writer.writerow([j, tested_set[-1]])
+        writer.writerow([j, tested_set[i][-1]])
         j+=1
     res_file.close()
 
