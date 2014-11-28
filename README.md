@@ -1,7 +1,8 @@
 DecisionTree-AdaBoost
 =====================
 
-To use sampled_training_getkicked.csv
+To use sampled_training_getkicked.csv:
+
 1. change line 13 and 14 in adaboost.py and line 793 and 795 in decisiontree.py
 to 
 
