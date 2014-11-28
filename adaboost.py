@@ -53,7 +53,7 @@ def adaboost(training_data, rounds):
         error = 0
         for i in range(len(classifications)):
             predicted = classifications[i]
-            error += (predicted != resampled_examples[i][-1])*weights[i]
+            error += (predicted != training_data.instances[i][-1])*weights[i]
         
         train_accuracy = decisiontree.tree_accuracy(resampled_examples, weak_learner)
         print "Training Accuracy with sampled dataset= " + str(train_accuracy) + "%"
@@ -76,7 +76,7 @@ def adaboost(training_data, rounds):
         print  "weak learner added"
 
         for i in range(m):
-            y = resampled_examples[i][-1]
+            y = training_data.instances[i][-1]
             h = classifications[i]
             h = -1 if h == 0 else 1
             y = -1 if y == 0 else 1
