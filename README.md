@@ -8,7 +8,7 @@ to
 
 train_filename = "./Datasets/sampled_training_getkicked.csv"
 
-test_filename = "test_getkicked.csv"
+test_filename = "./Datasets/test_getkicked.csv"
 
 --2. In addition, since sampled_getkicked.csv dataset has more attributes than sampled_Ore.csv you will have to change the numeric attributes in decisiontree.py on line 108,323, and 528 from 
 
