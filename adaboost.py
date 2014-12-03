@@ -8,7 +8,8 @@ import math
 import random
 import decisiontree
 import csv
-from numpy.random import *
+from numpy.random import rand
+from numpy import cumsum, sort, sum, searchsorted
 
 
 def train(
@@ -87,15 +88,9 @@ def classify(weight_classifier, example):
 
 
 def resample(weights):
-    n = len(weights)
-    rand_indices = []
-    C = [0.] + [sum(weights[:i + 1]) for i in range(n)]
-    (u0, j) = (random(), 0)
-    for u in [(u0 + i) / n for i in range(n)]:
-        while u > C[j]:
-            j += 1
-        rand_indices.append(j - 1)
-    return rand_indices
+    t = cumsum(weights)
+    s = sum(weights)
+    return searchsorted(t,rand(len(weights))*s)
 
 
 def main():
