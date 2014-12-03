@@ -72,7 +72,7 @@ def train(
         print 'Sum of weights', sum_weights
         normalized_weights = [float(w) / sum_weights for w in weights]
         weights = normalized_weights
-    return zip(alphas, learners)
+    return zip(alphas, classifiers)
 
 
 def classify(weight_classifier, example):
