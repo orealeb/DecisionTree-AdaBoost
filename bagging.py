@@ -1,43 +1,34 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-import scipy.io as sio
-from scipy import stats
 import numpy as np
-import math
 import random
 import decisiontree
 import csv
 
-train_filename = './Datasets/66_SAMPLED.csv'
-test_filename = './Datasets/66_test.csv'
-training_data = decisiontree.Dataset(train_filename)
-test_data = decisiontree.Dataset(test_filename, True)
-label_name = 'IsBadBuy'
-
-# read in label
-
-labels = []
-for line in open('labels.csv'):
-    line = line.replace('"', '').strip()
-    labels.append(line)
 
 
-def bagging(training_data, rounds):
-    num_rows = training_data.leng
-    weights = np.ones(num_rows) * 1.0 / num_rows
+def train(training_data, attr_names, label_name, num_attr, num_rounds):
+    num_rows = len(training_data)
     classifiers = []
     alphas = []
-    for t in range(rounds):
+    for n in range(num_rounds):
         resampled_entries = []
         random_indices = random.sample(list(range(0, num_rows)),
                 num_rows)
         for i in range(num_rows):
-            resampled_entries.append(training_data.instances[random_indices[i]])
+            resampled_entries.append(training_data[random_indices[i]])
         default = decisiontree.mode(resampled_entries, -1)
-        print 'round ' + str(t + 1) + ' training...'
+        print 'round ' + str(n + 1) + ' training...'
         weak_classifier = \
-            decisiontree.learn_decision_tree(resampled_entries,
-                training_data.attr_names, default, label_name, 0)
+             decisiontree.learn_decision_tree(
+            resampled_entries,
+            attr_names,
+            default,
+            label_name,
+            0,
+            num_attr,
+            )
+
         classifiers.append(weak_classifier)
     return classifiers
 
@@ -53,19 +44,111 @@ def classify(classifiers, example):
             vote0 += 1
     return (1 if vote1 > vote0 else 0)
 
+def main():
+    train_filename = './Datasets/66_SAMPLED.csv'
+    test_filename = './Datasets/66_test.csv'
+    
+    # specify numeric attributes in input file
+    
+    num_attr = [
+        True,
+        True,
+        True,
+        True,
+        True,
+        True,
+        True,
+        True,
+        True,
+        True,
+        True,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        ]
+    (attr_names, training_data) = decisiontree.read_data(train_filename,
+            num_attr)
+    (attr_names, test_data) = decisiontree.read_data(test_filename,
+            num_attr)
+    label_name = 'IsBadBuy'
+    
+    # read in ids
+    
+    ids = []
+    for line in open('./Datasets/ids.csv'):
+        line = line.replace('"', '').strip()
+        ids.append(line)
+    
+    ret = train(training_data, attr_names, label_name, num_attr, 5)
+    print 'bagging procedure complete!'
+    
+    print ret
+    
+    predictions = []
+    
+    for row in test_data:
+        predictions.append(classify(ret, row))
+    
+    res_file = open('bagging_res.csv', 'w')
+    writer = csv.writer(res_file)
+    header = ('RefId', 'IsBadBuy')
+    writer.writerow(header)
+    for i in range(len(predictions)):
+        writer.writerow([ids[i], predictions[i]])
+    res_file.close()
 
-classifers = bagging(training_data, 5)
-print 'bagging procedure building complete!'
 
-predictions = []
-
-for row in test_data.instances:
-    predictions.append(classify(classifers, row))
-
-res_file = open('bagging_res.csv', 'w')
-writer = csv.writer(res_file)
-header = ('RefId', 'IsBadBuy')
-writer.writerow(header)
-for i in range(len(predictions)):
-    writer.writerow([labels[i], predictions[i]])
-res_file.close()
+if __name__ == '__main__':
+    main()
