@@ -369,7 +369,7 @@ def main():
     # read in label
 
     ids = []
-    for line in open('ids.csv'):
+    for line in open('./Datasets/ids.csv'):
         line = line.replace('"', '').strip()
         ids.append(line)
 
