@@ -14,8 +14,6 @@ training_data = decisiontree.Dataset(train_filename)
 test_data = decisiontree.Dataset(test_filename, True)
 label_name = 'IsBadBuy'
 
-array = np.array
-
 # read in label
 
 labels = []
