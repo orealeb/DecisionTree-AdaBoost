@@ -25,4 +25,5 @@ For the classifier algorithms the output file is already formatted with IsBadBuy
   * output file: adaboost_res.csv
   
 Currently bagging.py and adaboost.py is set to a default 5 number of rounds. To change this, visit line 183 for adaboost.py or 134 for bagging.py, containing the line:
+
 ret = train(training_data, attr_names, label_name, num_attr, 5)
