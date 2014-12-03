@@ -1,425 +1,387 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
 from __future__ import division
+from collections import Counter
 import math
-import operator
-import time
 import random
+import operator
 import copy
 import csv
-from collections import Counter
 
 
-# original author https://github.com/avyfain/decisionTree
+class Node:
 
-############################################################################
-class TreeNode():
     def predict(self, e):
-        if isinstance(self, TreeLeaf):
+        if isinstance(self, Leaf):
             return self.result
         else:
             if self.numeric:
-                if e[self.attr] <= self.splitval and '<=' in self.branches:
+                if e[self.attr] <= self.splitval and '<=' \
+                    in self.branches:
                     return self.branches['<='].predict(e)
                 elif '>' in self.branches:
                     return self.branches['>'].predict(e)
                 else:
                     return '0'
             else:
-                try:    
+                try:
                     out = self.branches[e[self.attr]].predict(e)
                 except:
                     return '0'
                 return out
 
-    def disjunctive_nf(self, path):
-        if isinstance(self, TreeLeaf):
-            if self.result == '1':
-                print "("+ str(path) + ") OR"
-                return path
-            else:
-                return False
 
-        else:
-            for branch_label, branch in self.branches.iteritems():
-                if self.numeric:
-                    clause = self.attr_name + " " + branch_label + " "+ str(self.splitval)
-                else: 
-                    clause = self.attr_name + " is " + branch_label
-                new_path = path + [clause]
-                branch.disjunctive_nf(new_path)
-        return path
+class Leaf(Node):
 
-    def list_nodes(self, nodes):
-        if isinstance(self, TreeLeaf):
-            nodes.append(self)
-            return nodes
-        nodes.append(self)
-        for branch_label, branch in self.branches.iteritems():
-            nodes = branch.list_nodes(nodes)
-        return nodes
-
-############################################################################
-
-class TreeLeaf(TreeNode):
     def __init__(self, target_class):
         self.result = target_class
 
-    def __repr__(self):
-        return "This is a TreeLeaf with result: {0}".format(self.result)
-
-    def toFork(self):
-        self.__class__ = TreeFork
+    def makeBranch(self):
+        self.__class__ = Branch
         self.result = None
-############################################################################
 
-class TreeFork(TreeNode):
+
+class Branch(Node):
+
     def __init__(self, attr_arr):
-        self.attr =  attr_arr[0]
-        self.splitval =  attr_arr[1]
+        self.attr = attr_arr[0]
+        self.splitval = attr_arr[1]
         self.numeric = attr_arr[2]
         self.attr_name = attr_arr[3]
         self.mode = attr_arr[4]
         self.branches = {}
 
-    def toLeaf(self, target):
-        self.__class__ = TreeLeaf
+    def makeLeaf(self, target):
+        self.__class__ = Leaf
         self.result = target
 
-    def add_branch(self, val, subtree, default):
+    def addBranch(
+        self,
+        val,
+        subtree,
+        default,
+        ):
+
         self.branches[val] = subtree
 
-    def __repr__(self):
-        return "\nThis node is a fork on {0}, with {1} branches.\nMost instances in it are {2}.".format(self.attr_name,len(self.branches),self.mode)
-############################################################################
-class Dataset:
-    def __init__(self, filename, test=False):
-        self.filename = filename
-        #leng = 0
-        self.arrange_data()
-        #self.leng #= leng
-        #leng = self.leng
-        if not test:
-            self.fill_missing()
-        self.leng = len(self.instances)
 
-    def arrange_data(self):
-        with open(self.filename) as f:
-            #global leng
-            original_text = f.read()
-            self.numeric_attrs = [False,False,False,True,False,False,False,False,False,False,False,False,True,False,False,False,True,True,True,True,True,True,True,True,False,False,False,False,False,True,False,True,False,False]
-            #print len(self.numeric_attrs) should be same length as len(self.instances[0])
-            # split data by instances... if last line is empty, delete it
-            self.instances = [line.split(',') for line in original_text.split("\n")]
-            #print len(self.instances[0])
-            if self.instances[-1]==['']:
-                del self.instances[-1]
-
-            # set header row as attributes, remove it from dataset
-            self.attr_names = self.instances.pop(0)
-
-            # Change strings to int where necessary
-            for instance in self.instances:
-                for a in range(len(self.numeric_attrs)):
-                    if instance[a] == '?':
-                        continue
-                    if self.numeric_attrs[a]:
-                        instance[a] = int(instance[a])
-
-            # self.values = [[e[attr] for e in self.examples] for attr in self.attributes]
-
-    def fill_missing(self):
-        groups = [0, 1]
-        fill_values = 2*[[None] * len(self.attr_names)]
-        for g in groups:
-            group_instances = [e for e in self.instances if e[-1] == str(groups[g])]
-            for attr in range(len(self.attr_names[:-1])):
-                if self.numeric_attrs[attr]:
-                    not_missing = [e[attr] for e in group_instances if e[attr] != '?']      
-                    fill_values[g][attr] = int(sum(not_missing) / len(not_missing))
-                else:
-                    nominal_vals = [e[attr] for e in group_instances]
-                    fill_values[g][attr] = Counter(nominal_vals).most_common()[0][0]
-
-        for instance in self.instances:
-            for attr in range(len(self.attr_names)):
-                if instance[attr]=='?' and instance[-1]=='0':
-                    instance[attr] = fill_values[0][attr]
-                elif instance[attr]=='?' and instance[-1]=='1':
-                    instance[attr] = fill_values[1][attr]
-        return True
-
-############################################################################
-
-def getFrequencies(examples, attributes, target):
-    frequencies = {}
-    #find target in data
-    a = attributes.index(target)
-    #calculate frequency of values in target attr
+def get_freq(examples, attributes, target_class):
+    freq = {}
+    a = attributes.index(target_class)
     for row in examples:
-        if row[a] in frequencies:
-            frequencies[row[a]] += 1 
+        if row[a] in freq:
+            freq[row[a]] += 1
         else:
-            frequencies[row[a]] = 1
-    return frequencies
+            freq[row[a]] = 1
+    return freq
 
-############################################################################
 
 def entropy(examples, attributes, target):
 
     dataEntropy = 0.0
-    frequencies = getFrequencies(examples, attributes, target)
-    # Calculate the entropy of the data for the target attr
+    frequencies = get_freq(examples, attributes, target)
     for freq in frequencies.values():
-        dataEntropy += (-freq/len(examples)) * math.log(freq/len(examples), 2) 
+        dataEntropy += -freq / len(examples) * math.log(freq
+                / len(examples), 2)
     return dataEntropy
 
-############################################################################
 
-def gain(examples, attributes, attr, targetAttr):
-    numeric_attrs = [False,False,False,True,False,False,False,False,False,False,False,False,True,False,False,False,True,True,True,True,True,True,True,True,False,False,False,False,False,True,False,True,False,False]
-    currentEntropy = entropy(examples, attributes, targetAttr)
-    subsetEntropy = 0.0
+def gain(
+    examples,
+    attributes,
+    attr,
+    target_attr,
+    num_attr,
+    ):
+
+    current_entropy = entropy(examples, attributes, target_attr)
+    subset_entropy = 0.0
     i = attributes.index(attr)
     best = 0
 
-    if numeric_attrs[i]:
+    if num_attr[i]:
         order = sorted(examples, key=operator.itemgetter(i))
-        subsetEntropy = currentEntropy
+        subset_entropy = current_entropy
         for j in range(len(order)):
-            if j==0 or j == (len(order)-1) or order[j][-1]==order[j+1][-1]:
+            if j == 0 or j == len(order) - 1 or order[j][-1] == order[j
+                    + 1][-1]:
                 continue
 
-            currentSplitEntropy = 0.0
-            subsets = [order[0:j], order[j+1:]]
+            current_split_ent = 0.0
+            subsets = [order[0:j], order[j + 1:]]
 
             for subset in subsets:
-                setProb = len(subset)/len(order)
-                currentSplitEntropy += setProb*entropy(subset, attributes, targetAttr)
+                setProb = len(subset) / len(order)
+                current_split_ent += setProb * entropy(subset,
+                        attributes, target_attr)
 
-            if currentSplitEntropy < subsetEntropy:
+            if current_split_ent < subset_entropy:
                 best = order[j][i]
-                subsetEntropy = currentSplitEntropy
+                subset_entropy = current_split_ent
     else:
-        valFrequency = getFrequencies(examples, attributes, attr)
+        value_freq = get_freq(examples, attributes, attr)
 
-        for val, freq in valFrequency.iteritems():
-            valProbability =  freq / sum(valFrequency.values())
-            dataSubset     = [entry for entry in examples if entry[i] == val]
-            subsetEntropy += valProbability * entropy(dataSubset, attributes, targetAttr)
-    
-    return [(currentEntropy - subsetEntropy),best]
+        for (val, freq) in value_freq.iteritems():
+            value_prob = freq / sum(value_freq.values())
+            data_sub = [entry for entry in examples if entry[i] == val]
+            subset_entropy += value_prob * entropy(data_sub,
+                    attributes, target_attr)
 
-############################################################################
-def selectAttr(examples, attributes, target):
+    return [current_entropy - subset_entropy, best]
+
+
+def select_attribute(
+    examples,
+    attributes,
+    target_class,
+    num_attr,
+    ):
+
     best = False
     bestCut = None
-    maxGain = 0
+    max_gain = 0
     for a in attributes[:-1]:
-        newGain, cut_at = gain(examples, attributes, a, target) 
-        if newGain>maxGain:
-            maxGain = newGain
+        (new_gain, cut_at) = gain(examples, attributes, a,
+                                  target_class, num_attr)
+        if new_gain > max_gain:
+            max_gain = new_gain
             best = attributes.index(a)
             bestCut = cut_at
     return [best, bestCut]
-############################################################################
 
-def one_class(examples):
+
+def check_one_class(examples):
     first_class = examples[0][-1]
     for e in examples:
-        if e[-1]!=first_class:
+        if e[-1] != first_class:
             return False
     return True
-############################################################################
 
-def mode(examples, index):  
+
+def mode(examples, index):
     L = [e[index] for e in examples]
     return Counter(L).most_common()[0][0]
 
-############################################################################
-def splitTree(examples, attr, splitval):
-    numeric_attrs = [False,False,False,True,False,False,False,False,False,False,False,False,True,False,False,False,True,True,True,True,True,True,True,True,False,False,False,False,False,True,False,True,False,False]
-    isNum = numeric_attrs[attr]
+
+def split_tree(
+    examples,
+    attr,
+    splitval,
+    num_attr,
+    ):
+
+    isNum = num_attr[attr]
     positive_count = 0
 
     if isNum:
-        subsets = {'<=': [], 
-                    '>': []}
+        subsets = {'<=': [], '>': []}
         for row in examples:
-            if row[-1]=='1':
+            if row[-1] == '1':
                 positive_count += 1
-            if row[attr]<=splitval:
+            if row[attr] <= splitval:
                 subsets['<='].append(row)
-            elif row[attr]>splitval:
+            elif row[attr] > splitval:
                 subsets['>'].append(row)
     else:
         subsets = {}
         for row in examples:
-            if row[-1]=='1':
+            if row[-1] == '1':
                 positive_count += 1
             if row[attr] in subsets:
                 subsets[row[attr]].append(row)
             else:
                 subsets[row[attr]] = [row]
-    negative_count = len(examples)-positive_count
+    negative_count = len(examples) - positive_count
     if positive_count > negative_count:
         majority = '1'
     else:
         majority = '0'
 
-    out = {"splitOn": splitval, "branches": subsets, "numeric": isNum, "mode": majority}
+    out = {
+        'splitOn': splitval,
+        'branches': subsets,
+        'numeric': isNum,
+        'mode': majority,
+        }
     return out
 
-############################################################################
 
-def learn_decision_tree(examples, attributes, default, target, iteration):
+def learn_decision_tree(
+    examples,
+    attributes,
+    default,
+    target,
+    iteration,
+    num_attr,
+    ):
+
     iteration += 1
 
     if iteration > 10:
-        return TreeLeaf(default)
+        return Leaf(default)
     if not examples:
-        tree = TreeLeaf(default)
-    elif one_class(examples):
-        tree = TreeLeaf(examples[0][-1])
+        tree = Leaf(default)
+    elif check_one_class(examples):
+        tree = Leaf(examples[0][-1])
     else:
-        best_attr = selectAttr(examples, attributes, target)
+        best_attr = select_attribute(examples, attributes, target,
+                num_attr)
         if best_attr is False:
-            tree = TreeLeaf(default)
-
+            tree = Leaf(default)
         else:
-            split_examples = splitTree(examples, best_attr[0], best_attr[1]) #new decision tree with root test *best_attr*
+
+            split_examples = split_tree(examples, best_attr[0],
+                    best_attr[1], num_attr)
             best_attr.append(split_examples['numeric'])
             best_attr.append(attributes[best_attr[0]])
-            best_attr.append(split_examples["mode"])
-            tree = TreeFork(best_attr)
-            for branch_lab, branch_examples in split_examples['branches'].iteritems():
+            best_attr.append(split_examples['mode'])
+            tree = Branch(best_attr)
+            for (branch_lab, branch_examples) in \
+                split_examples['branches'].iteritems():
                 if not branch_examples:
                     break
                 sub_default = mode(branch_examples, -1)
-                subtree = learn_decision_tree(branch_examples, attributes, sub_default, target, iteration)
-                tree.add_branch(branch_lab, subtree, sub_default)
+                subtree = learn_decision_tree(
+                    branch_examples,
+                    attributes,
+                    sub_default,
+                    target,
+                    iteration,
+                    num_attr,
+                    )
+                tree.addBranch(branch_lab, subtree, sub_default)
     return tree
 
-############################################################################
-def tree_accuracy(examples, dt):
-    count = 0
-    correct_predictions = 0
-    for row in examples:
-        count += 1
-        pred_val = dt.predict(row)
-        if row[-1]==pred_val:
-            correct_predictions+=1
-    accuracy = 100*correct_predictions/len(examples)
-    return accuracy
 
-###########################################################################
-def test_tree(examples, dt):
-    for row in examples:
-        row[-1] = dt.predict(row)
-    return examples
-###########################################################################
 def classify(examples, dt):
     classifications = []
     for row in examples:
         classifications.append(dt.predict(row))
     return classifications
-############################################################################
-def prune_tree(tree, nodes, validation_examples, old_acc):
-    percent_to_try = 0.2
-    nodes = random.sample(nodes, int(percent_to_try*(len(nodes))))
-    reduced_by = 1000
-    while reduced_by >0:
-        reduction = []
-        for n in nodes:
-            if isinstance(n, TreeLeaf):
-                nodes.pop(nodes.index(n))
-                continue
-            else:
-                target_class = n.mode
-                n.toLeaf(target_class)
-                new_acc = tree_accuracy(validation_examples, tree)
-                diff = new_acc - old_acc
-                reduction.append(diff)
-                n.toFork()
-        if reduction != []:
-            max_red_at = reduction.index(max(reduction))
-            if isinstance(nodes[max_red_at], TreeFork):
-                nodes[max_red_at].toLeaf(nodes[max_red_at].mode)
-            nodes.pop(max_red_at)
-            reduced_by = max(reduction)
-            old_acc = tree_accuracy(validation_examples, tree)
-        else:
-            reduced_by = 0
 
-    print "The new accuracy is: " + str(new_acc) + "%"
-    return [tree, new_acc]
-############################################################################
+
+def read_data(filename, numeric_attributes):
+    with open(filename, 'rb') as csvfile:
+        datareader = csv.reader(csvfile, delimiter=',')  # delimiter is ',' seperating fields
+        attr = datareader.next()  # header
+        data = []
+        for row in datareader:
+            data.append(row)
+    if data[-1] == ['']:
+        del data[-1]
+    for row in data:
+        for i in range(len(numeric_attributes) - 1):
+            if numeric_attributes[i]:
+                row[i] = int(row[i])
+    return (attr, data)
+
+
 def main():
-    now = time.time()
-    target = "IsBadBuy"
-    train_filename = "./Datasets/sampled_training_Ore.csv"
-    #validation_filename = "./Datasets/sampled_training_Ore.csv"
-    test_filename = "test.csv"
-    train_data = Dataset(train_filename)
-    #validation_data = Dataset(validation_filename)
-    test_data = Dataset(test_filename, True)
-    
-    #build tree
-    default = mode(train_data.instances, -1)
-    print "\nTime to learn this tree..."
-    learned_tree = learn_decision_tree(train_data.instances, train_data.attr_names, default, target, 0)
-    
-    print "Trained on " +str(train_filename)+ ":"
-    train_accuracy = tree_accuracy(train_data.instances, learned_tree)
-    print "Training Accuracy= " + str(train_accuracy) + "%"
+    target = 'IsBadBuy'
+    train_filename = './Datasets/66_SAMPLED.csv'
+    test_filename = './Datasets/66_test.csv'
 
-    #validation_accuracy = tree_accuracy(validation_data.instances, learned_tree)
-    #print "Validation Accuracy= " + str(validation_accuracy) + "%"
-    #print "\nDISJUNCTIVE NORMAL FORM PRE PRUNING"
-    dnf = learned_tree.disjunctive_nf([])
-    nodes = learned_tree.list_nodes([])
-    print "We have " + str(len(nodes)) + " nodes!"
+    # specify numeric attributes in input file
 
-    prePruningTime = time.time() - now    
-    print "Pre-pruning Runtime = " + str(prePruningTime) + "\n"
-    pruned_learned_tree = prune_tree(learned_tree, nodes, train_data.instances, train_accuracy)
+    num_attr = [
+        True,
+        True,
+        True,
+        True,
+        True,
+        True,
+        True,
+        True,
+        True,
+        True,
+        True,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        ]
+    (attr_names, train_data) = read_data(train_filename, num_attr)
+    (attr_names, test_data) = read_data(test_filename, num_attr)
+    default = mode(train_data, -1)
+    learned_tree = learn_decision_tree(
+        train_data,
+        attr_names,
+        default,
+        target,
+        0,
+        num_attr,
+        )
 
-    print "\nDISJUNCTIVE NORMAL FORM POST PRUNING"
-    dnf_pruned = pruned_learned_tree[0].disjunctive_nf([])
-    nodes_pruned = pruned_learned_tree[0].list_nodes([])
-    print "We have " + str(len(nodes_pruned)) + " nodes!"
-    
-    print "Now this is the test set!"
-    tested_set = test_tree(test_data.instances, learned_tree)
-    #print tested_set
+    predictions = classify(test_data, learned_tree)
 
-    #with open('res.csv', 'w') as fp:
-        #a = csv.writer(fp, delimiter=',')
-        #a.writerows(tested_set)
-    pre = []
-    for example in test_data.instances:
-        pre.append(learned_tree.predict(example))
-        print learned_tree.predict(example)
-    
-    #read in label
-    labels = []
-    for line in open("labels.csv"):
+    # read in label
+
+    ids = []
+    for line in open('ids.csv'):
         line = line.replace('"', '').strip()
-        labels.append(line)
+        ids.append(line)
 
     res_file = open('decision_tree_res.csv', 'w')
     writer = csv.writer(res_file)
-    header = 'RefId','IsBadBuy'
-    writer.writerow(header)  
-    for i in range(len(tested_set)):
-        writer.writerow([labels[i], tested_set[i][-1]])
+    header = ('RefId', 'IsBadBuy')
+    writer.writerow(header)
+    for i in range(len(predictions)):
+        writer.writerow([ids[i], predictions[i][-1]])
     res_file.close()
+    print 'Done'
 
-    totalTime = time.time() - now
-    print "Final Stats:"
-    print "Runtime = " + str(totalTime) + "\n"
-    print "Train pre-pruning accuracy: " + str(train_accuracy)
-    print "Train post-pruning accuracy: " + str(pruned_learned_tree[1])
-    print "Pre-pruning tree size: " + str(len(nodes))
-    print "Post-pruning tree size: " + str(len(nodes_pruned))
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
